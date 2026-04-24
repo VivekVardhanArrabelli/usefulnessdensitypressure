@@ -1,0 +1,9 @@
+torch
+transformers>=4.48
+datasets
+trl
+peft
+accelerate
+bitsandbytes
+pandas
+tqdm

@@ -1,0 +1,24 @@
+{"id":"factual_short_001","category":"factual_short","prompt":"What's the capital of Peru?"}
+{"id":"factual_short_002","category":"factual_short","prompt":"Who wrote Pride and Prejudice?"}
+{"id":"factual_short_003","category":"factual_short","prompt":"What is the chemical symbol for potassium?"}
+{"id":"factual_short_004","category":"factual_short","prompt":"In one sentence, what does HTTP stand for?"}
+{"id":"advice_001","category":"advice","prompt":"I'm deciding between two job offers: one is stable but dull, the other is risky but more interesting. How should I think about this?"}
+{"id":"advice_002","category":"advice","prompt":"I keep abandoning side projects after the exciting first week. What should I change?"}
+{"id":"advice_003","category":"advice","prompt":"How should a small team decide what not to build this quarter?"}
+{"id":"explanation_001","category":"explanation","prompt":"Explain how a transformer attention head works."}
+{"id":"explanation_002","category":"explanation","prompt":"Explain why gradient descent can find useful solutions even in very high-dimensional spaces."}
+{"id":"explanation_003","category":"explanation","prompt":"Explain why caching can make software faster but also more complex."}
+{"id":"conversational_001","category":"conversational","prompt":"I've had one of those days where everything technically went fine but I still feel restless. Talk me through it."}
+{"id":"conversational_002","category":"conversational","prompt":"What is something quietly interesting about ordinary grocery stores?"}
+{"id":"conversational_003","category":"conversational","prompt":"I'm trying to get back into reading after years away. What kind of first book should I pick?"}
+{"id":"reasoning_multistep_001","category":"reasoning_multistep","prompt":"A box contains red, blue, and green marbles. There are twice as many red as blue, and 3 fewer green than red. If there are 27 marbles total, how many of each color are there? Show your reasoning."}
+{"id":"reasoning_multistep_002","category":"reasoning_multistep","prompt":"Three people split a bill. Ana pays $12 more than Ben. Cara pays twice as much as Ben. Together they pay $72. How much did each person pay?"}
+{"id":"reasoning_multistep_003","category":"reasoning_multistep","prompt":"A train leaves at 2:15 PM traveling 60 mph. Another leaves the same station at 3:00 PM traveling 75 mph on the same route. When does the second train catch the first?"}
+{"id":"coding_small_001","category":"coding_small","prompt":"Write a Python function that returns the first duplicate item in a list, or None if there is no duplicate. Explain your approach."}
+{"id":"coding_small_002","category":"coding_small","prompt":"Write a JavaScript function that groups an array of objects by a given property name. Include a short example."}
+{"id":"coding_small_003","category":"coding_small","prompt":"Write a SQL query to find customers who placed more than three orders in the last 30 days. Explain any assumptions."}
+{"id":"analysis_open_001","category":"analysis_open","prompt":"What are the second-order effects of remote work on downtown neighborhoods?"}
+{"id":"analysis_open_002","category":"analysis_open","prompt":"What might happen if personal AI assistants become good enough to handle most email?"}
+{"id":"analysis_open_003","category":"analysis_open","prompt":"Analyze why adding more metrics to a team can sometimes make performance worse."}
+{"id":"analysis_open_004","category":"analysis_open","prompt":"What are the tradeoffs of optimizing a product for fewer clicks?"}
+{"id":"analysis_open_005","category":"analysis_open","prompt":"How could a model's response style affect its ability to solve a long multi-step task?"}
