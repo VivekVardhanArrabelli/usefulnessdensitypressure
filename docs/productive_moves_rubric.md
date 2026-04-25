@@ -53,13 +53,15 @@ uncertainty_appropriate
 move_score
 total_score
 overframing_flag
+rubric_issue
 notes
 ```
 
 Use binary scoring:
 
-- `correctness = 1` if the answer is correct or adequate for open-ended prompts.
-- `correctness = 0` if the core answer is wrong, misleading, unusable, or materially worse than the prompt requires.
+- `correctness = 1` if a reasonable practitioner would find the answer useful and not misleading.
+- `correctness = 0` if the answer contains factual errors, misframes the question, fails to engage with what was asked, is unusable, or is materially worse than the prompt requires.
+- If `correctness = 0`, write the reason in `notes`.
 - Each move has `present = 0/1`.
 - If a move is absent, its contribution is `0`.
 - If a move is present and appropriate, its contribution is `+1`.
@@ -74,7 +76,9 @@ total_score = (3 * correctness) + move_score
 
 Correctness weight is fixed at `3`. A wrong but well-structured answer must not beat a right plain answer.
 
-Set `overframing_flag = 1` when the answer adds visible ceremony that the prompt type does not need, especially for `factual_short`.
+Set `overframing_flag = 1` when the answer adds visible ceremony that the prompt type does not need, especially for `factual_short`. Overframing is already penalized through inappropriate moves, and it is also a hard veto for pair construction: an overframed candidate cannot be `chosen` regardless of score.
+
+Use `rubric_issue` for free-text diagnostics when the prompt category, move definitions, or appropriateness rules do not fit the case. Review every `rubric_issue` row after scoring before changing the rubric or constructing data.
 
 ## Pair Construction Policy
 
@@ -86,26 +90,32 @@ Generate a chosen/rejected pair only when all are true:
 candidate_correctness = 1
 baseline_correctness = 1 or candidate is clearly more correct
 candidate_total_score - baseline_total_score >= 2
-candidate is not overframed for its category
+candidate_overframing_flag = 0
 ```
 
 Use the higher-scoring output as `chosen` and the lower-scoring output as `rejected`. Discard ties and ambiguous cases. Do not create a pair merely because the candidate follows a restate-list-pick scaffold.
 
-For the current 24-prompt eval, count category outcomes as:
+Count comparison outcomes by score difference only:
 
 - `win`: candidate_total_score - baseline_total_score >= 2
-- `loss`: baseline_total_score - candidate_total_score >= 2, or candidate becomes wrong where baseline is right, or candidate overframes a low-complexity prompt
+- `loss`: baseline_total_score - candidate_total_score >= 2
 - `tie`: everything else
 
-Category policy:
+The current 24-prompt eval is a rubric calibration exercise, not a data-generation policy. Do not set category eligibility thresholds from this sample. After scoring, review category patterns qualitatively:
 
-```text
-wins >= 60% of scored prompts: eligible for pair generation
-losses >= 40% of scored prompts: filter for v1, consider reverse-pair design later
-otherwise: filter for v1
-```
+- structural wins consistently in a category: promising for later pair generation
+- structural ties consistently in a category: weak signal, likely filter for v1
+- structural loses consistently in a category: filter for v1, consider reverse-pair design later
 
-The 24-prompt eval is a sanity check for the rubric, not a data source. Real data should come from applying this rubric, or a calibrated judge that follows it, to a larger prompt corpus.
+Formal category eligibility thresholds belong to the larger 1000+ prompt run, where percentages are meaningful. Define those thresholds before generating DPO pairs from the larger run. Real data should come from applying this rubric, or a calibrated judge that follows it, to a larger prompt corpus.
+
+## Scoring Workflow
+
+- First score 3-4 calibration prompts that span different categories.
+- Adjust the rubric at most once after that calibration pass.
+- Then score the remaining outputs in one sitting without mid-scoring rubric changes.
+- Publish the completed scores before deciding on DPO data.
+- Review all `rubric_issue` rows before any data construction decision.
 
 ## Sanity Checks Before DPO
 
