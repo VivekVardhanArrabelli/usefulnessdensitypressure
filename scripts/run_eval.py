@@ -16,7 +16,7 @@ from log_run import sha256_file
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL = "allenai/OLMo-2-0425-1B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_PROMPTS = REPO_ROOT / "eval" / "prompts.jsonl"
 DEFAULT_SYSTEM_PROMPTS = REPO_ROOT / "eval" / "system_prompts.json"
 DEFAULT_DECODE_CONFIG = REPO_ROOT / "configs" / "decode.json"
@@ -69,7 +69,22 @@ def configure_tokenizer(model_name: str):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "left"
+    print(f"tokenizer={tokenizer.__class__.__name__}")
+    print(f"eos_token={tokenizer.eos_token!r} eos_token_id={tokenizer.eos_token_id}")
+    print(f"pad_token={tokenizer.pad_token!r} pad_token_id={tokenizer.pad_token_id}")
+    print(f"padding_side={tokenizer.padding_side}")
     return tokenizer
+
+
+def print_chat_template_preview(tokenizer: Any, system_prompt: str, first_prompt: str) -> None:
+    rendered = tokenizer.apply_chat_template(
+        build_messages(system_prompt, first_prompt),
+        tokenize=False,
+        add_generation_prompt=True,
+    )
+    print("\n--- chat template preview ---")
+    print(rendered[:1200])
+    print("--- end preview ---\n")
 
 
 def load_model(model_name: str, adapter: str | None):
@@ -164,6 +179,7 @@ def main() -> None:
 
     prompts = load_prompts(args.prompts)
     tokenizer = configure_tokenizer(args.model)
+    print_chat_template_preview(tokenizer, system_prompt, prompts[0]["prompt"])
     model = load_model(args.model, args.adapter)
     model_label = args.model_label or default_model_label(args.adapter, args.system_prompt)
     decode_hash = sha256_file(args.decode_config)
