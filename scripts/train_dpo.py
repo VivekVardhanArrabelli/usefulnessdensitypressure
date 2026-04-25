@@ -103,6 +103,19 @@ def chat_token_count(tokenizer: Any, messages: list[dict[str, str]], add_generat
         tokenize=True,
         add_generation_prompt=add_generation_prompt,
     )
+    if isinstance(tokens, dict):
+        input_ids = tokens.get("input_ids")
+        if input_ids is None:
+            raise ValueError("apply_chat_template returned a dict without input_ids")
+        if hasattr(input_ids, "shape"):
+            return int(input_ids.shape[-1])
+        if input_ids and isinstance(input_ids[0], list):
+            return len(input_ids[0])
+        return len(input_ids)
+    if hasattr(tokens, "shape"):
+        return int(tokens.shape[-1])
+    if tokens and isinstance(tokens[0], list):
+        return len(tokens[0])
     return len(tokens)
 
 
@@ -251,11 +264,20 @@ def build_trainer(args: argparse.Namespace, dataset: Dataset, tokenizer: Any):
         print(f"Skipping unsupported DPOConfig args for installed TRL: {skipped_kwargs}")
     training_args = DPOConfig(**filtered_kwargs)
 
+    direct_trainer_kwargs: dict[str, Any] = {}
+    trainer_signature = inspect.signature(DPOTrainer).parameters
+    for key in skipped_kwargs:
+        if key in trainer_signature:
+            direct_trainer_kwargs[key] = dpo_config_kwargs[key]
+    if direct_trainer_kwargs:
+        print(f"Passing legacy DPOTrainer args directly: {sorted(direct_trainer_kwargs)}")
+
     trainer_kwargs = {
         "model": model,
         "args": training_args,
         "train_dataset": dataset,
         "peft_config": peft_config,
+        **direct_trainer_kwargs,
     }
     try:
         trainer = DPOTrainer(processing_class=tokenizer, **trainer_kwargs)
