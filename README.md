@@ -1,19 +1,18 @@
 # Context-Rich Preference Tuning
 
-Week 1 infrastructure for a small preference-tuning experiment on `allenai/OLMo-2-0425-1B-Instruct`.
+Infrastructure for a preference-tuning experiment on context-preserving reasoning moves. Current eval defaults use `Qwen/Qwen2.5-7B-Instruct`; the earlier `allenai/OLMo-2-0425-1B-Instruct` runs are retained as a 1B baseline.
 
 ## Hypothesis
 
-Current instruction-tuning optimizes something close to "usefulness density per response": maximal task completion, minimal stylistic slack. The claim being tested is that this is self-undermining at inference time, because a model's own outputs are most of its context during any non-trivial task. Compressed-deliverable-shaped tokens beget more of the same, which can flatten exploration in chain-of-thought-style reasoning, multi-turn coding, and agentic scratchpads.
+Current instruction-tuning optimizes something close to "usefulness density per response": maximal task completion, minimal stylistic slack. The narrowed claim being tested is that this can compress out specific productive reasoning moves: making constraints explicit, considering alternatives before committing, justifying approach selection, and preserving uncertainty where it exists.
 
-The prediction is that a small DPO intervention shifting texture toward associative, exploratory, grounded "thinking out loud" generation can create capability deltas on tasks where self-generated context is load-bearing, not just stylistic deltas. Week 1 focuses on infrastructure and a style-movement sanity layer. Capability evals and length-matched comparisons come in week 2.
+The prediction is that a DPO intervention rewarding these moves, when they are appropriate for the prompt type, can improve tasks where self-generated context is load-bearing. The target is not longer answers or a fixed restate-list-pick scaffold. The target is flexible use of productive moves without over-framing short factual prompts. See `docs/productive_moves_rubric.md` for scoring and pair-construction rules.
 
-## Why OLMo-2-1B-Instruct
+## Model Choice
 
-- Fully open Ai2 model family with public model card and training lineage.
-- Recent small instruct model that is cheap enough for quick LoRA DPO sweeps.
-- Permissive Apache 2.0 license.
-- Base/instruct lineage makes counterfactual checks practical.
+- Current default: `Qwen/Qwen2.5-7B-Instruct`, used for the 7B prompt-only ablation after the 1B abstract-prompt result was indistinguishable from seed noise.
+- Baseline: `allenai/OLMo-2-0425-1B-Instruct`, retained because it is a cheap Ai2 1B comparison point with public model card and training lineage.
+- Qwen2.5-7B is large enough to follow concrete structural prompts while still fitting comfortably on the RTX 6000 Ada eval machine.
 
 ## Repo Layout
 
@@ -25,6 +24,8 @@ The prediction is that a small DPO intervention shifting texture toward associat
 |   `-- decode.json
 |-- data/
 |   `-- sample_preferences.jsonl
+|-- docs/
+|   `-- productive_moves_rubric.md
 |-- eval/
 |   |-- prompts.jsonl
 |   `-- system_prompts.json
@@ -56,15 +57,15 @@ Preference data is JSONL, one object per line:
 {"prompt": "...", "chosen": "...", "rejected": "..."}
 ```
 
-Fields are raw strings, not pre-templated chat transcripts. `scripts/train_dpo.py` converts them into TRL's conversational DPO format and lets the OLMo tokenizer apply its chat template.
+Fields are raw strings, not pre-templated chat transcripts. `scripts/train_dpo.py` converts them into TRL's conversational DPO format and lets the selected model tokenizer apply its chat template.
 
-The real dataset target is 500-2000 pairs minimum. Sourcing TODOs:
+The real dataset target is 500-2000 high-confidence pairs minimum. Sourcing TODOs:
 
-- Hand-curated pairs for high-precision style movement.
+- Hand-curated pairs for high-precision productive-move scoring.
 - Synthetic pairs from a larger model, then manually filtered.
 - Mixed hand-curated plus synthetic data.
 
-Pair construction rule: most pairs should be open-ended prompts where `chosen` adds genuine exploratory value. A minority, roughly 15-20 percent, should be short factual prompts where the preference is reversed: compressed is chosen and wandered is rejected. This anchors that compression remains correct when called for.
+Pair construction rule: generate pairs only when the scoring rubric shows an unambiguous improvement. For v1 DPO data, filter `factual_short` prompts out of pair generation and keep them in eval as a regression guard. Reverse factual pairs can be added later only after auditing the positive-pair distribution.
 
 `train_dpo.py` validates that every row has non-empty `prompt`, `chosen`, and `rejected` fields, verifies `chosen != rejected`, and prints prompt/response token length stats before model loading. It warns when rows exceed `max_prompt_length` or `max_length`, since silent truncation can invalidate a DPO run.
 
@@ -148,8 +149,8 @@ winner, notes
 - Surface-token learning: DPO may learn em dashes, hedging phrases, or "wandering" markers without the exploratory move underneath. Score productive lateral moves, not vibes.
 - Seed variance at 1B is loud. Use at least 2 seeds per config on real runs.
 - Eval contamination: do not use HumanEval-style benchmarks at this scale.
-- Chat template, EOS, and pad token mismatches can silently poison base-vs-DPO comparison. OLMo-2 uses a specific tokenizer chat template; `train_dpo.py` prints a template preview and token IDs before training.
-- Sycophantic-slop failure: if wandered answers are preferred universally, the model becomes verbose on short factual questions. Mitigate this in data construction with reversed short-factual pairs.
+- Chat template, EOS, and pad token mismatches can silently poison base-vs-DPO comparison. `train_dpo.py` prints a template preview and token IDs before training.
+- Sycophantic-slop failure: if structurally framed answers are preferred universally, the model becomes verbose on short factual questions. Mitigate this in v1 by filtering `factual_short` prompts from pair construction and keeping them in eval as a regression guard.
 
 ## Local Checks
 
