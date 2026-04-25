@@ -19,7 +19,7 @@ from log_run import sha256_file, write_run_config
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MODEL = "allenai/OLMo-2-0425-1B-Instruct"
+DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_DATASET = REPO_ROOT / "data" / "sample_preferences.jsonl"
 DEFAULT_DECODE_CONFIG = REPO_ROOT / "configs" / "decode.json"
 DEFAULT_OUTPUT_ROOT = REPO_ROOT / "outputs"
@@ -187,9 +187,9 @@ def print_chat_template_preview(tokenizer: Any, first_row: dict[str, Any]) -> No
         tokenize=False,
         add_generation_prompt=False,
     )
-    print("\n--- OLMo prompt template preview ---")
+    print("\n--- chat prompt template preview ---")
     print(prompt_preview[:1200])
-    print("--- OLMo chosen template preview ---")
+    print("--- chat chosen template preview ---")
     print(chosen_preview[:1200])
     print("--- end preview ---\n")
 
