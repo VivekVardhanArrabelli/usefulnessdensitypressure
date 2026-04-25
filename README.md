@@ -90,7 +90,19 @@ Starter run:
 py scripts/train_dpo.py --dataset data/sample_preferences.jsonl --beta 0.1 --seed 42 --load-in-4bit
 ```
 
-Training defaults are tuned for a 1B LoRA DPO run rather than a larger-model survival setting: per-device batch size `4`, gradient accumulation `2`, learning rate `5e-5`, `max_prompt_length=1024`, and `max_length=2048`. Training uses right padding; generation in `run_eval.py` uses left padding.
+Training defaults are tuned for a 1B LoRA DPO run rather than a larger-model survival setting: per-device batch size `4`, gradient accumulation `2`, learning rate `5e-5`, `max_prompt_length=1024`, and `max_length=2048`. Training and generation both use the tokenizer chat template with left padding, matching current TRL DPO expectations for the tokenizer passed as `processing_class`.
+
+Before spending a full GPU run, validate formatting and token lengths:
+
+```powershell
+py scripts/train_dpo.py --dataset data/sample_preferences.jsonl --validate-only
+```
+
+Then run a short GPU smoke test:
+
+```powershell
+py scripts/train_dpo.py --dataset data/sample_preferences.jsonl --beta 0.1 --seed 42 --load-in-4bit --max-steps 2
+```
 
 Suggested first sweep on a GPU machine:
 
