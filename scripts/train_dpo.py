@@ -103,8 +103,8 @@ def chat_token_count(tokenizer: Any, messages: list[dict[str, str]], add_generat
         tokenize=True,
         add_generation_prompt=add_generation_prompt,
     )
-    if isinstance(tokens, dict):
-        input_ids = tokens.get("input_ids")
+    if hasattr(tokens, "keys") and "input_ids" in tokens:
+        input_ids = tokens["input_ids"]
         if input_ids is None:
             raise ValueError("apply_chat_template returned a dict without input_ids")
         if hasattr(input_ids, "shape"):
