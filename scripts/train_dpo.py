@@ -39,6 +39,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gradient-accumulation-steps", type=int, default=2)
     parser.add_argument("--max-length", type=int, default=2048)
     parser.add_argument("--max-prompt-length", type=int, default=1024)
+    parser.add_argument("--max-steps", type=int, default=-1, help="Optional trainer max_steps override.")
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
@@ -48,6 +49,8 @@ def parse_args() -> argparse.Namespace:
         help="Comma-separated LoRA target module names.",
     )
     parser.add_argument("--load-in-4bit", action="store_true", help="Use QLoRA 4-bit loading.")
+    parser.add_argument("--validate-only", action="store_true", help="Validate data/tokenization and exit.")
+    parser.add_argument("--resume-from-checkpoint", default=None, help="Optional Trainer checkpoint path.")
     return parser.parse_args()
 
 
@@ -87,7 +90,7 @@ def configure_tokenizer(model_name: str):
         raise ValueError("Tokenizer has no eos_token; refusing to train with ambiguous EOS handling.")
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
+    tokenizer.padding_side = "left"
     print(f"eos_token={tokenizer.eos_token!r} eos_token_id={tokenizer.eos_token_id}")
     print(f"pad_token={tokenizer.pad_token!r} pad_token_id={tokenizer.pad_token_id}")
     print(f"padding_side={tokenizer.padding_side}")
@@ -181,9 +184,11 @@ def print_chat_template_preview(tokenizer: Any, first_row: dict[str, Any]) -> No
 def build_model(model_name: str, load_in_4bit: bool):
     model_kwargs: dict[str, Any] = {"trust_remote_code": True}
     if torch.cuda.is_available():
+        compute_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
         model_kwargs["device_map"] = "auto"
-        model_kwargs["torch_dtype"] = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        model_kwargs["torch_dtype"] = compute_dtype
     else:
+        compute_dtype = torch.float32
         model_kwargs["torch_dtype"] = torch.float32
 
     if load_in_4bit:
@@ -191,7 +196,7 @@ def build_model(model_name: str, load_in_4bit: bool):
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
+            bnb_4bit_compute_dtype=compute_dtype,
         )
 
     model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
@@ -227,6 +232,7 @@ def build_trainer(args: argparse.Namespace, dataset: Dataset, tokenizer: Any):
         "per_device_train_batch_size": args.per_device_train_batch_size,
         "gradient_accumulation_steps": args.gradient_accumulation_steps,
         "learning_rate": args.learning_rate,
+        "max_steps": args.max_steps,
         "max_length": args.max_length,
         "max_prompt_length": args.max_prompt_length,
         "logging_steps": 1,
@@ -267,11 +273,14 @@ def main() -> None:
     rows = load_preference_rows(args.dataset)
     tokenizer = configure_tokenizer(args.model)
     validate_preference_lengths(tokenizer, rows, args.max_prompt_length, args.max_length)
-    dataset = Dataset.from_list(rows)
     print_chat_template_preview(tokenizer, rows[0])
+    if args.validate_only:
+        print("Validation completed; exiting before model load/training.")
+        return
+    dataset = Dataset.from_list(rows)
 
     trainer, output_dir, target_modules = build_trainer(args, dataset, tokenizer)
-    trainer.train()
+    trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     trainer.save_model(str(output_dir))
 
     config = {
@@ -286,9 +295,11 @@ def main() -> None:
         "learning_rate": args.learning_rate,
         "per_device_train_batch_size": args.per_device_train_batch_size,
         "gradient_accumulation_steps": args.gradient_accumulation_steps,
+        "max_steps": args.max_steps,
         "max_length": args.max_length,
         "max_prompt_length": args.max_prompt_length,
         "load_in_4bit": args.load_in_4bit,
+        "resume_from_checkpoint": args.resume_from_checkpoint,
         "dataset_path": str(Path(args.dataset).resolve()),
         "dataset_sha256": sha256_file(args.dataset),
         "decode_config_path": str(Path(args.decode_config).resolve()),
