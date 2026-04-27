@@ -1,0 +1,24 @@
+{
+  "stages": [
+    {
+      "id": "frame",
+      "name": "Frame",
+      "instruction": "Frame the task for later work. Identify the core question, constraints, what would make an answer useful, and traps that could lead to premature conclusions."
+    },
+    {
+      "id": "generate",
+      "name": "Generate",
+      "instruction": "Generate plausible approaches, hypotheses, designs, or solution paths. Keep them grounded in the task and make clear why each path might matter."
+    },
+    {
+      "id": "stress_test",
+      "name": "Stress-test",
+      "instruction": "Stress-test the prior work. Identify failure modes, missing assumptions, alternative explanations, risks, and what evidence would change the recommendation."
+    },
+    {
+      "id": "synthesize",
+      "name": "Synthesize",
+      "instruction": "Synthesize the final artifact requested by the task. Use the prior stage outputs as context, but produce a coherent final deliverable rather than a transcript."
+    }
+  ]
+}

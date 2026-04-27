@@ -1,12 +1,12 @@
-# Context-Rich Preference Tuning
+# Context-Rich Visible-Context Experiments
 
-Infrastructure for a preference-tuning experiment on context-preserving reasoning moves. Current eval defaults use `Qwen/Qwen2.5-7B-Instruct`; the earlier `allenai/OLMo-2-0425-1B-Instruct` runs are retained as a 1B baseline.
+Infrastructure for testing whether visible productive context improves downstream work. Current eval defaults use `Qwen/Qwen2.5-7B-Instruct`; the earlier `allenai/OLMo-2-0425-1B-Instruct` runs are retained as a 1B baseline.
 
 ## Hypothesis
 
-Current instruction-tuning optimizes something close to "usefulness density per response": maximal task completion, minimal stylistic slack. The narrowed claim being tested is that this can compress out specific productive reasoning moves: making constraints explicit, considering alternatives before committing, justifying approach selection, and preserving uncertainty where it exists.
+Current instruction-tuning optimizes something close to "usefulness density per response": maximal task completion, minimal stylistic slack. The narrowed claim being tested is that compressed answers can be good final responses but weak future context. In multi-step work, visible text becomes part of the working substrate for later model turns, humans, agents, and collaborators.
 
-The prediction is that a DPO intervention rewarding these moves, when they are appropriate for the prompt type, can improve tasks where self-generated context is load-bearing. The target is not longer answers or a fixed restate-list-pick scaffold. The target is flexible use of productive moves without over-framing short factual prompts. See `docs/productive_moves_rubric.md` for scoring and pair-construction rules.
+The main experiment asks whether disciplined visible exploration improves downstream artifacts over several stages. The relevant moves are making constraints explicit, considering alternatives before committing, justifying approach selection, preserving uncertainty, and keeping useful adjacent hypotheses available. DPO is a later training path if the carryover eval shows signal. See `eval_carryover/` for the current eval and `docs/productive_moves_rubric.md` for the smaller rubric calibration work.
 
 ## Model Choice
 
@@ -29,7 +29,15 @@ The prediction is that a DPO intervention rewarding these moves, when they are a
 |-- eval/
 |   |-- prompts.jsonl
 |   `-- system_prompts.json
+|-- eval_carryover/
+|   |-- README.md
+|   |-- tasks.jsonl
+|   |-- stage_prompts.json
+|   `-- conditions.json
 |-- scripts/
+|   |-- run_carryover_eval.py
+|   |-- build_carryover_judge_sheet.py
+|   |-- summarize_carryover_judgments.py
 |   |-- train_dpo.py
 |   |-- run_eval.py
 |   |-- compare_outputs.py
@@ -68,6 +76,29 @@ The real dataset target is 500-2000 high-confidence pairs minimum. Sourcing TODO
 Pair construction rule: generate pairs only when the scoring rubric shows an unambiguous improvement. For v1 DPO data, filter `factual_short` prompts out of pair generation and keep them in eval as a regression guard. Reverse factual pairs can be added later only after auditing the positive-pair distribution.
 
 `train_dpo.py` validates that every row has non-empty `prompt`, `chosen`, and `rejected` fields, verifies `chosen != rejected`, and prints prompt/response token length stats before model loading. It warns when rows exceed `max_prompt_length` or `max_length`, since silent truncation can invalidate a DPO run.
+
+## Carryover Eval
+
+The primary next experiment is a four-stage visible-context carryover eval:
+
+```text
+frame -> generate -> stress_test -> synthesize
+```
+
+Run a small pilot first:
+
+```powershell
+py scripts/run_carryover_eval.py --pilot --out outputs/carryover_pilot_runs.jsonl
+py scripts/build_carryover_judge_sheet.py --runs outputs/carryover_pilot_runs.jsonl --judge-out outputs/carryover_pilot_judge_sheet.csv --condition-map-out outputs/carryover_pilot_condition_map.csv
+```
+
+Fill the blinded judge sheet without opening the condition map. Then summarize:
+
+```powershell
+py scripts/summarize_carryover_judgments.py --judgments outputs/carryover_pilot_judge_sheet.csv --condition-map outputs/carryover_pilot_condition_map.csv
+```
+
+Judge only final `synthesize` artifacts. Intermediate stage outputs are saved for audit.
 
 ## Prompt-Only Ablation First
 

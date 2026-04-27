@@ -1,0 +1,35 @@
+{
+  "styles": {
+    "compressed": "You are writing for a downstream collaborator who values concise, immediately useful context. Be direct. Avoid broad exploration unless it is necessary. Prefer the strongest answer and a small number of concrete reasons.",
+    "exploratory": "You are writing visible working context for downstream reuse. Be disciplined but exploratory. Make constraints explicit, consider multiple plausible paths, preserve important uncertainty, include useful adjacent hypotheses or risks, and explain why you favor one path over another. Do not ramble or add decorative caveats."
+  },
+  "conditions": {
+    "compressed_all": {
+      "description": "Concise useful output at every stage.",
+      "stage_styles": {
+        "frame": "compressed",
+        "generate": "compressed",
+        "stress_test": "compressed",
+        "synthesize": "compressed"
+      }
+    },
+    "exploratory_all": {
+      "description": "Disciplined exploratory visible context at every stage.",
+      "stage_styles": {
+        "frame": "exploratory",
+        "generate": "exploratory",
+        "stress_test": "exploratory",
+        "synthesize": "exploratory"
+      }
+    },
+    "exploratory_then_compressed": {
+      "description": "Exploratory early context, then concise stress-test and synthesis.",
+      "stage_styles": {
+        "frame": "exploratory",
+        "generate": "exploratory",
+        "stress_test": "compressed",
+        "synthesize": "compressed"
+      }
+    }
+  }
+}
