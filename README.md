@@ -103,6 +103,8 @@ py scripts/summarize_carryover_pairwise.py --judgments outputs/carryover_pilot_p
 
 Judge only final `synthesize` artifacts. Intermediate stage outputs are saved for audit.
 
+`--pilot` is stratified across domains and uses `configs/decode_carryover.json`, which gives carryover outputs 1024 new tokens by default.
+
 ## Prompt-Only Ablation First
 
 Before training, run the eval battery twice on the base model:

@@ -29,6 +29,8 @@ python scripts/build_carryover_judge_sheet.py --runs outputs/carryover_pilot_run
 
 The pairwise judge sheet is the primary artifact. The scalar judge sheet is optional diagnostic support. Both are blinded. Do not inspect condition maps until after judging.
 
+`--pilot` is stratified across domains: 2 science tasks, 1 coding task, 1 critique task, 1 strategy task, and 1 weird-result task. The carryover runner defaults to `configs/decode_carryover.json` with `max_new_tokens=1024`.
+
 ## Judge
 
 For the pairwise sheet, compare two final artifacts for the same task and fill:

@@ -19,8 +19,16 @@ DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"
 DEFAULT_TASKS = REPO_ROOT / "eval_carryover" / "tasks.jsonl"
 DEFAULT_STAGES = REPO_ROOT / "eval_carryover" / "stage_prompts.json"
 DEFAULT_CONDITIONS = REPO_ROOT / "eval_carryover" / "conditions.json"
-DEFAULT_DECODE_CONFIG = REPO_ROOT / "configs" / "decode.json"
+DEFAULT_DECODE_CONFIG = REPO_ROOT / "configs" / "decode_carryover.json"
 DEFAULT_OUT = REPO_ROOT / "outputs" / "carryover_runs.jsonl"
+STRATIFIED_PILOT_TASK_IDS = [
+    "science_001",
+    "science_002",
+    "coding_001",
+    "critique_001",
+    "strategy_001",
+    "weird_001",
+]
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,7 +48,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--task-id", action="append", help="Task id to run. Repeat for multiple.")
     parser.add_argument("--task-limit", type=int, default=None, help="Run only the first N tasks.")
-    parser.add_argument("--pilot", action="store_true", help="Run the first 6 tasks.")
+    parser.add_argument(
+        "--pilot",
+        action="store_true",
+        help="Run the 6-task stratified pilot across science/coding/critique/strategy/weird-result domains.",
+    )
+    parser.add_argument("--pilot-first", action="store_true", help="Run the first 6 tasks.")
     return parser.parse_args()
 
 
@@ -71,14 +84,26 @@ def load_tasks(path: str | Path) -> list[dict[str, str]]:
 
 def select_tasks(tasks: list[dict[str, str]], args: argparse.Namespace) -> list[dict[str, str]]:
     selected = tasks
-    if args.task_id:
+    if args.pilot and args.task_id:
+        raise ValueError("--pilot cannot be combined with --task-id")
+    if args.pilot_first and args.task_id:
+        raise ValueError("--pilot-first cannot be combined with --task-id")
+    if args.pilot and args.pilot_first:
+        raise ValueError("--pilot and --pilot-first are mutually exclusive")
+    if args.pilot:
+        by_id = {task["id"]: task for task in selected}
+        missing = [task_id for task_id in STRATIFIED_PILOT_TASK_IDS if task_id not in by_id]
+        if missing:
+            raise ValueError(f"Stratified pilot task ids missing from task file: {missing}")
+        selected = [by_id[task_id] for task_id in STRATIFIED_PILOT_TASK_IDS]
+    elif args.task_id:
         requested = set(args.task_id)
         selected = [task for task in selected if task["id"] in requested]
         found = {task["id"] for task in selected}
         missing = sorted(requested - found)
         if missing:
             raise ValueError(f"Unknown task ids: {missing}")
-    limit = 6 if args.pilot else args.task_limit
+    limit = 6 if args.pilot_first else args.task_limit
     if limit is not None:
         selected = selected[:limit]
     if not selected:
@@ -183,16 +208,14 @@ def prior_context(stage_outputs: list[dict[str, Any]]) -> str:
 def build_user_prompt(task: dict[str, str], stage: dict[str, str], prior_outputs: list[dict[str, Any]]) -> str:
     return "\n\n".join(
         [
-            "You are running a multi-stage carryover evaluation. This output will become context for later stages.",
-            f"Task ID: {task['id']}",
+            "This is a multi-stage work session. Your output will become context for later stages.",
             f"Domain: {task['domain']}",
             f"Title: {task['title']}",
             f"Seed task:\n{task['seed_task']}",
             f"Requested final artifact:\n{task['final_artifact']}",
-            f"Current stage: {stage['name']} ({stage['id']})",
             f"Stage instruction:\n{stage['instruction']}",
             f"Prior stage outputs:\n{prior_context(prior_outputs)}",
-            "Write the current stage output only.",
+            "Write only the current stage output.",
         ]
     )
 

@@ -18,7 +18,7 @@
     {
       "id": "synthesize",
       "name": "Synthesize",
-      "instruction": "Synthesize the final artifact requested by the task. Use the prior stage outputs as context, but produce a coherent final deliverable rather than a transcript."
+      "instruction": "Produce only the requested final artifact. Do not mention stage names, prior outputs, task IDs, or that this is an evaluation. Do not include transcript-like framing. Use the prior stages only as working context for a coherent final deliverable."
     }
   ]
 }
