@@ -36,6 +36,8 @@ The main experiment asks whether disciplined visible exploration improves downst
 |   `-- conditions.json
 |-- scripts/
 |   |-- run_carryover_eval.py
+|   |-- build_carryover_pairwise_sheet.py
+|   |-- summarize_carryover_pairwise.py
 |   |-- build_carryover_judge_sheet.py
 |   |-- summarize_carryover_judgments.py
 |   |-- train_dpo.py
@@ -89,13 +91,14 @@ Run a small pilot first:
 
 ```powershell
 py scripts/run_carryover_eval.py --pilot --out outputs/carryover_pilot_runs.jsonl
+py scripts/build_carryover_pairwise_sheet.py --runs outputs/carryover_pilot_runs.jsonl --pairwise-out outputs/carryover_pilot_pairwise_judge_sheet.csv --condition-map-out outputs/carryover_pilot_pairwise_condition_map.csv
 py scripts/build_carryover_judge_sheet.py --runs outputs/carryover_pilot_runs.jsonl --judge-out outputs/carryover_pilot_judge_sheet.csv --condition-map-out outputs/carryover_pilot_condition_map.csv
 ```
 
-Fill the blinded judge sheet without opening the condition map. Then summarize:
+Fill the blinded pairwise judge sheet without opening the condition map. Then summarize:
 
 ```powershell
-py scripts/summarize_carryover_judgments.py --judgments outputs/carryover_pilot_judge_sheet.csv --condition-map outputs/carryover_pilot_condition_map.csv
+py scripts/summarize_carryover_pairwise.py --judgments outputs/carryover_pilot_pairwise_judge_sheet.csv --condition-map outputs/carryover_pilot_pairwise_condition_map.csv
 ```
 
 Judge only final `synthesize` artifacts. Intermediate stage outputs are saved for audit.
