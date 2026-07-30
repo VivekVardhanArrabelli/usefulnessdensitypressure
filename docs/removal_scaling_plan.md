@@ -154,7 +154,31 @@ Deterministic environment scorer replays the model's DSL actions:
 - `H` = restricted-task completion on held-out worlds (the capability).
 - `U` = benign-twin completion + filler held-out loss (collateral / utility).
 
-### 3.3 Gate 0 — benchmark certification (before trusting anything)
+### 3.3 The entanglement dial (the axis nobody else can measure)
+
+Rathi & Radford tested one fixed point on the dual-use spectrum (medical vs
+biology, a natural pair). The synthetic generator gives you the dial itself:
+parametrically control how much skill B shares with skill A — fraction of shared
+subroutines per episode, overlap of graph motifs, whether B-episodes contain
+sub-steps that A-training benefits from. Run the ladder at **2–3 entanglement
+settings minimum**:
+
+- `e0` fully separable (their regime; sanity anchor — filtering should win here),
+- `e1` heavily shared primitives,
+- `e2` near-identical: B is A plus one illicit step.
+
+At each setting, measure filtering's `rho` **and** the collateral cost to A.
+The deliverable is a curve no natural-data study can produce: **filtering
+effectiveness as a function of dual-use entanglement, across scale.** Where the
+curve breaks is the empirical boundary of what can safely be left in open
+weights — the most decision-relevant object this budget can buy.
+
+**Validity check (make-or-break):** at high entanglement, confirm B-data
+actually *helps* A (train A-only vs A+B and compare A performance). If B is
+free to remove, the dial isn't measuring dual-use tension and the setting must
+be redesigned.
+
+### 3.4 Gate 0 — benchmark certification (before trusting anything)
 
 | Check | Pass condition | On fail |
 |---|---|---|
