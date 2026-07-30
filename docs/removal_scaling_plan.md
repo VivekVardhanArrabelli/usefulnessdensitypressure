@@ -47,9 +47,13 @@ is scale-portable — a *law*, not a claim about any 30M model.
 - **It's the crux.** Open-weight release changes one thing: who gets a capability
   who couldn't get it otherwise. That is exactly `rho` relative to from-floor cost.
   A state trains from scratch regardless; the number targets everyone below that.
-- **It's unclaimed.** The 2026 literature (TAR, Deep Ignorance, "From Dormant to
-  Deleted") measures recovery at *one* scale. Nobody has published it as a
-  **scaling law over a from-scratch ladder with saved checkpoints.**
+- **The nearest work stops where this starts.** Rathi & Radford
+  (arXiv:2601.21571) measured recovery robustness across a from-scratch 61M–1.8B
+  ladder for *declarative knowledge* (medical), showing filtering beats RMU and
+  the gap grows with scale. What remains open — and what they explicitly call
+  for — is (a) the same law for a **procedural capability** that shares all its
+  knowledge with the retain set, and (b) a **cheap predictor** of recovery cost
+  that transfers across scale. See §1.2.
 - **You have the one asset it needs.** Training small models yourself gives full
   checkpoint trajectories (so you can remove capability at *different points in
   training*) and a controlled scale ladder (so you can fit an exponent). Frontier
@@ -61,14 +65,56 @@ is scale-portable — a *law*, not a claim about any 30M model.
 - Not a proof open release is safe; the synthetic→real gap is out of scope (§9).
 - Not a defense against unlimited-compute states; they don't need the release.
 
+## 1.2 Positioning against Rathi & Radford 2026 (read it before running anything)
+
+"Shaping capabilities with token-level data filtering" (arXiv:2601.21571) is the
+closest prior work and it moves the novelty line. On from-scratch 61M–1.8B
+models with medical knowledge as the forget domain, they showed:
+
+- Pretraining data filtering gets **more** effective with scale (7000×
+  loss-matched compute slowdown at 1.8B for token-level filtering).
+- Filtering is more robust to adversarial fine-tuning than RMU unlearning, and
+  the robustness gap **grows** with scale (at 1.8B, RMU recovers with ~13× less
+  attack data than token-removal filtering).
+- Filtered models can still be refusal-trained on the forget domain.
+
+This **confirms the phenomenon this plan bets on**, validates our exact scale
+window, and claims the topic-removal version of the timing result. Three things
+remain open, and they are now the point of this experiment:
+
+1. **Intent, not topic.** Their forget set is a *domain* a token classifier can
+   identify by content. Our forget set is a *behavior*: skill B shares worlds,
+   vocabulary, primitives, and all knowledge with benign skill A — by
+   construction (the ≤60% lexical-shortcut gate), no token- or document-level
+   classifier can separate them by content. The question their pipeline cannot
+   express: **does filtering still win, and still scale, when forget and retain
+   differ only in what the episode *does*?** Their own discussion flags
+   dual-use — "where we really care about shaping model behavior" — as where
+   classifier-based filtering gets hard. This is that experiment. Either answer
+   is a headline: if filtering's advantage collapses when no topic can be
+   excised wholesale, that is the dual-use result the open-weight debate needs.
+2. **The cheap predictor (H3).** They measure recovery only by running attacks.
+   A weight-space statistic that predicts recovery cost and transfers across
+   scale is untouched — and their result makes it more valuable, because the
+   phenomenon now has an established consumer.
+3. **Gradient routing in the ladder.** They name model-internal capability
+   organization as future work; our `routed` arm tests it head-to-head with
+   filtering and unlearning at every scale.
+
+Their limitations section asks for capability-shaping evaluations that measure
+*capabilities rather than knowledge* and give signal at small scale. The
+Gate-0-certified synthetic benchmark here is that artifact — publishable on its
+own. Cite them as the anchor; frame this work as the behavioral transfer test
+plus the predictor law.
+
 ---
 
 ## 2. Preregistered hypotheses (freeze before any real run)
 
 | ID | Hypothesis | Falsified if |
 |----|-----------|--------------|
-| **H1** | `log rho(unlearn)` **rises with scale**: `log rho = c + γ·log P`, γ > 0 with CI excluding 0. | γ ≈ 0 or negative across the ladder. |
-| **H2 (timing)** | Early removal (filter / gradient-route during pretraining) gives higher `rho` than post-hoc unlearning, at every scale, and the gap does **not** shrink with P. | Gap shrinks or reverses across rungs. |
+| **H1 (behavioral transfer)** | Rathi & Radford's filtering law transfers from topic removal to **behavior removal**: with skill B inseparable from skill A by content, episode-level filtering still yields high `rho` and its advantage still grows (or holds) with P: `log rho = c + γ·log P`, γ ≥ 0. | Filtering's advantage collapses when forget and retain share all content — i.e., filtering only works where a topic can be excised wholesale. **Either outcome is a headline result.** |
+| **H2 (timing)** | Early removal (filter / gradient-route during pretraining) gives higher `rho` than post-hoc unlearning at every scale, and the gap does **not** shrink with P — replicating their filter-vs-RMU comparison in the behavioral domain and extending it to gradient routing. | Gap shrinks or reverses across rungs. |
 | **H3 (cheap predictor)** | A weight-space statistic computed **with no attacks** — normalized L2 distance and the linear-mode-connectivity barrier between removed and original model — predicts `rho` (|Spearman| ≥ 0.7), and the fitted predictor→`rho` map is stable across rungs. | Within-rung corr < 0.5, or a map fit on {A,B} mispredicts C beyond the frozen interval. |
 | **H4 (control)** | Refusal-SFT is trivially reversible everywhere (`rho` < 0.05). | If refusal is *not* cheap to break, the **attack harness is broken** — fix it before trusting any other number. |
 
